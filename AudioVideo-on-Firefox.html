@@ -2,7 +2,7 @@
 > Muaz Khan     - https://github.com/muaz-khan 
 > neizerth      - https://github.com/neizerth
 > MIT License   - https://www.webrtc-experiment.com/licence
-> Source code   - https://github.com/muaz-khan/WebRTC-Experiment/tree/master/RecordRTC
+> Source code   - https://github.com/muaz-khan/RecordRTC
 -->
 
 <!DOCTYPE html>
@@ -46,20 +46,17 @@
     }
     </style>
     <script>
-    document.createElement('article');
-    document.createElement('footer');
+        document.createElement('article');
+        document.createElement('footer');
     </script>
-
-    <!-- script used for audio/video/gif recording -->
-    <script src="//cdn.webrtc-experiment.com/RecordRTC.js">
-    </script>
+    <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
 </head>
 
 <body>
     <article>
         <header style="text-align: center;">
             <h1>
-                Recording audio+video using <a href="https://github.com/muaz-khan/WebRTC-Experiment/tree/master/RecordRTC">RecordRTC</a>!
+                Recording audio+video using <a href="https://github.com/muaz-khan/RecordRTC">RecordRTC</a>!
             </h1>
             <p>
                 <a href="https://www.webrtc-experiment.com/">HOME</a>
@@ -67,8 +64,8 @@
                 <a href="http://www.MuazKhan.com/" target="_blank">Muaz Khan</a> .
                 <a href="http://twitter.com/WebRTCWeb" target="_blank" title="Twitter profile for WebRTC Experiments">@WebRTCWeb</a> .
                 <a href="https://github.com/muaz-khan?tab=repositories" target="_blank" title="Github Profile">Github</a> .
-                <a href="https://github.com/muaz-khan/WebRTC-Experiment/issues?state=open" target="_blank">Latest issues</a> .
-                <a href="https://github.com/muaz-khan/WebRTC-Experiment/commits/master" target="_blank">What's New?</a>
+                <a href="https://github.com/muaz-khan/RecordRTC/issues?state=open" target="_blank">Latest issues</a> .
+                <a href="https://github.com/muaz-khan/RecordRTC/commits/master" target="_blank">What's New?</a>
             </p>
         </header>
 
@@ -96,7 +93,7 @@
         </section>
 
         <script>
-        var video = document.getElementById('video');
+        var videoElement = document.getElementById('video');
         var downloadURL = document.getElementById('download-url');
 
         var startRecording = document.getElementById('start-recording');
@@ -120,15 +117,15 @@
 
             window.audioVideoRecorder.stopRecording(function(url) {
                 downloadURL.innerHTML = '<a href="' + url + '" download="RecordRTC.webm" target="_blank">Save RecordRTC.webm to Disk!</a>';
-                video.src = url;
-                video.muted = false;
-                video.play();
+                videoElement.src = url;
+                videoElement.muted = false;
+                videoElement.play();
 
-                video.onended = function() {
-                    video.pause();
+                videoElement.onended = function() {
+                    videoElement.pause();
 
                     // dirty workaround for: "firefox seems unable to playback"
-                    video.src = URL.createObjectURL(audioVideoRecorder.getBlob());
+                    videoElement.src = URL.createObjectURL(audioVideoRecorder.getBlob());
                 };
             });
         };
@@ -139,10 +136,10 @@
                 audio: true,
                 video: true
             }, function(stream) {
-                video.src = URL.createObjectURL(stream);
-                video.muted = true;
-                video.controls = true;
-                video.play();
+                videoElement.src = URL.createObjectURL(stream);
+                videoElement.muted = true;
+                videoElement.controls = true;
+                videoElement.play();
 
                 callback(stream);
             }, function(error) {
@@ -200,7 +197,7 @@
         </section>
     </article>
 
-    <a href="https://github.com/muaz-khan/WebRTC-Experiment/tree/master/RecordRTC" class="fork-left"></a>
+    <a href="https://github.com/muaz-khan/RecordRTC" class="fork-left"></a>
 
     <footer>
         <p>

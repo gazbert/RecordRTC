@@ -15,7 +15,7 @@
  */
 
 function GifRecorder(mediaStream) {
-    if (!window.GIFEncoder) {
+    if (typeof GIFEncoder === 'undefined') {
         throw 'Please link: https://cdn.webrtc-experiment.com/gif-recorder.js';
     }
 
@@ -56,7 +56,7 @@ function GifRecorder(mediaStream) {
         video.height = this.video.height;
 
         // external library to record as GIF images
-        gifEncoder = new window.GIFEncoder();
+        gifEncoder = new GIFEncoder();
 
         // void setRepeat(int iter) 
         // Sets the number of times the set of GIF frames should be played. 
@@ -87,6 +87,12 @@ function GifRecorder(mediaStream) {
         var self = this;
 
         function drawVideoFrame(time) {
+            if (isPausedRecording) {
+                return setTimeout(function() {
+                    drawVideoFrame(time);
+                }, 100);
+            }
+
             lastAnimationFrame = requestAnimationFrame(drawVideoFrame);
 
             if (typeof lastFrameTime === undefined) {
@@ -96,6 +102,12 @@ function GifRecorder(mediaStream) {
             // ~10 fps
             if (time - lastFrameTime < 90) {
                 return;
+            }
+
+            if (video.paused) {
+                // via: https://github.com/muaz-khan/WebRTC-Experiment/pull/316
+                // Tweak for Android Chrome
+                video.play();
             }
 
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -142,6 +154,38 @@ function GifRecorder(mediaStream) {
 
         // bug: find a way to clear old recorded blobs
         gifEncoder.stream().bin = [];
+    };
+
+    var isPausedRecording = false;
+
+    /**
+     * This method pauses the recording process.
+     * @method
+     * @memberof GifRecorder
+     * @example
+     * recorder.pause();
+     */
+    this.pause = function() {
+        isPausedRecording = true;
+
+        if (!this.disableLogs) {
+            console.debug('Paused recording.');
+        }
+    };
+
+    /**
+     * This method resumes the recording process.
+     * @method
+     * @memberof GifRecorder
+     * @example
+     * recorder.resume();
+     */
+    this.resume = function() {
+        isPausedRecording = false;
+
+        if (!this.disableLogs) {
+            console.debug('Resumed recording.');
+        }
     };
 
     var canvas = document.createElement('canvas');

@@ -16,7 +16,7 @@
  */
 
 function CanvasRecorder(htmlElement) {
-    if (!window.html2canvas) {
+    if (typeof html2canvas === 'undefined') {
         throw 'Please link: //cdn.webrtc-experiment.com/screenshot.js';
     }
 
@@ -48,6 +48,8 @@ function CanvasRecorder(htmlElement) {
     this.stop = function(callback) {
         isRecording = false;
 
+        var that = this;
+
         /**
          * @property {Blob} blob - Recorded frames in video/webm blob.
          * @memberof CanvasRecorder
@@ -56,15 +58,60 @@ function CanvasRecorder(htmlElement) {
          *     var blob = recorder.blob;
          * });
          */
-        this.blob = whammy.compile();
+        whammy.compile(function(blob) {
+            that.blob = blob;
 
-        if (callback) {
-            callback(this.blob);
+            if (that.blob.forEach) {
+                that.blob = new Blob([], {
+                    type: 'video/webm'
+                });
+            }
+
+            if (callback) {
+                callback(that.blob);
+            }
+        });
+    };
+
+    var isPausedRecording = false;
+
+    /**
+     * This method pauses the recording process.
+     * @method
+     * @memberof CanvasRecorder
+     * @example
+     * recorder.pause();
+     */
+    this.pause = function() {
+        isPausedRecording = true;
+
+        if (!this.disableLogs) {
+            console.debug('Paused recording.');
+        }
+    };
+
+    /**
+     * This method resumes the recording process.
+     * @method
+     * @memberof CanvasRecorder
+     * @example
+     * recorder.resume();
+     */
+    this.resume = function() {
+        isPausedRecording = false;
+
+        if (!this.disableLogs) {
+            console.debug('Resumed recording.');
         }
     };
 
     function drawCanvasFrame() {
-        window.html2canvas(htmlElement, {
+        if (isPausedRecording) {
+            lastTime = new Date().getTime();
+            return setTimeout(drawCanvasFrame, 100);
+        }
+
+        html2canvas(htmlElement, {
             onrendered: function(canvas) {
                 var duration = new Date().getTime() - lastTime;
                 if (!duration) {

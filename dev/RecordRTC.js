@@ -37,23 +37,47 @@ function RecordRTC(mediaStream, config) {
             console.debug('started recording ' + config.type + ' stream.');
         }
 
-        // Media Stream Recording API has not been implemented in chrome yet;
-        // That's why using WebAudio API to record stereo audio in WAV format
-        var Recorder = isChrome ? window.StereoRecorder : window.MediaStreamRecorder;
+        var Recorder;
+
+        if (typeof StereoRecorder !== 'undefined' && isChrome) {
+            // Media Stream Recording API has not been implemented in chrome yet;
+            // That's why using WebAudio API to record stereo audio in WAV format
+            Recorder = StereoRecorder;
+        }
+
+        if (typeof MediaStreamRecorder !== 'undefined' && !isChrome) {
+            Recorder = MediaStreamRecorder;
+        }
 
         // video recorder (in WebM format)
         if (config.type === 'video' && isChrome) {
-            Recorder = window.WhammyRecorder;
+            if (typeof WhammyRecorder !== 'undefined') {
+                Recorder = WhammyRecorder;
+            } else {
+                throw 'WhammyRecorder.js seems NOT linked.';
+            }
         }
 
         // video recorder (in Gif format)
         if (config.type === 'gif') {
-            Recorder = window.GifRecorder;
+            if (typeof GifRecorder !== 'undefined') {
+                Recorder = GifRecorder;
+            } else {
+                throw 'GifRecorder.js seems NOT linked.';
+            }
         }
 
         // html2canvas recording!
         if (config.type === 'canvas') {
-            Recorder = window.CanvasRecorder;
+            if (typeof CanvasRecorder !== 'undefined') {
+                Recorder = CanvasRecorder;
+            } else {
+                throw 'CanvasRecorder.js seems NOT linked.';
+            }
+        }
+
+        if (config.recorderType) {
+            Recorder = config.recorderType;
         }
 
         mediaRecorder = new Recorder(mediaStream);
@@ -114,7 +138,7 @@ function RecordRTC(mediaStream, config) {
                 callback(url);
             }
 
-            if (!config.disableLogs) {
+            if (blob && !config.disableLogs) {
                 console.debug(blob.type, '->', bytesToSize(blob.size));
             }
 
@@ -127,6 +151,32 @@ function RecordRTC(mediaStream, config) {
                 parameter[config.type + 'Blob'] = dataURL;
                 DiskStorage.Store(parameter);
             });
+        }
+    }
+
+    function pauseRecording() {
+        if (!mediaRecorder) {
+            return console.warn(WARNING);
+        }
+
+        // not all libs yet having  this method
+        if (mediaRecorder.pause) {
+            mediaRecorder.pause();
+        } else if (!config.disableLogs) {
+            console.warn('This recording library is having no "pause" method.');
+        }
+    }
+
+    function resumeRecording() {
+        if (!mediaRecorder) {
+            return console.warn(WARNING);
+        }
+
+        // not all libs yet having  this method
+        if (mediaRecorder.resume) {
+            mediaRecorder.resume();
+        } else if (!config.disableLogs) {
+            console.warn('This recording library is having no "resume" method.');
         }
     }
 
@@ -148,7 +198,7 @@ function RecordRTC(mediaStream, config) {
             return;
         }
 
-        if (!!window.Worker) {
+        if (typeof Worker !== 'undefined') {
             var webWorker = processInWebWorker(function readFile(_blob) {
                 postMessage(new FileReaderSync().readAsDataURL(_blob));
             });
@@ -168,7 +218,7 @@ function RecordRTC(mediaStream, config) {
 
         function processInWebWorker(_function) {
             var blob = URL.createObjectURL(new Blob([_function.toString(),
-                'this.onmessage =  function (e) {readFile(e.data);}'
+                'this.onmessage =  function (e) {' + _function.name + '(e.data);}'
             ], {
                 type: 'application/javascript'
             }));
@@ -205,9 +255,28 @@ function RecordRTC(mediaStream, config) {
          *     video.src = videoURL;
          *     recordRTC.blob; recordRTC.buffer;
          * });
-         * @todo Implement <code class="str">recordRTC.stopRecording().getDataURL(callback);</code>
          */
         stopRecording: stopRecording,
+
+        /**
+         * This method pauses the recording process.
+         * @method
+         * @memberof RecordRTC
+         * @instance
+         * @example
+         * recordRTC.pauseRecording();
+         */
+        pauseRecording: pauseRecording,
+
+        /**
+         * This method resumes the recording process.
+         * @method
+         * @memberof RecordRTC
+         * @instance
+         * @example
+         * recordRTC.resumeRecording();
+         */
+        resumeRecording: resumeRecording,
 
         /**
          * It is equivalent to <code class="str">"recordRTC.blob"</code> property.
@@ -295,7 +364,16 @@ function RecordRTC(mediaStream, config) {
 
             hyperlink.dispatchEvent(evt);
 
-            (window.URL || window.webkitURL).revokeObjectURL(hyperlink.href);
+            var url;
+            if (typeof URL !== 'undefined') {
+                url = URL;
+            } else if (typeof webkitURL !== 'undefined') {
+                url = webkitURL;
+            } else {
+                throw 'Neither URL nor webkitURL detected.';
+            }
+
+            url.revokeObjectURL(hyperlink.href);
         },
 
         /**
@@ -523,3 +601,7 @@ RecordRTC.writeToDisk = function(options) {
         });
     }
 };
+
+if (typeof module !== 'undefined' /* && !!module.exports*/ ) {
+    module.exports = RecordRTC;
+}
